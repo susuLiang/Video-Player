@@ -11,18 +11,16 @@ import AVKit
 import AVFoundation
 
 class Player: NSObject {
-
     let player: AVPlayer = AVPlayer()
-
     @objc dynamic var timeControlStatus: AVPlayerTimeControlStatus = .waitingToPlayAtSpecifiedRate
-
 }
 
 class ViewController: UIViewController {
 
-//    let videoURL = URL(string: "http://devimages.apple.com/iphone/samples/bipbop/bipbopall.m3u8")
     var videoURL: URL?
     var player = Player()
+    var statusInt: Int?
+    var observation: NSKeyValueObservation!
     var playerLayer: AVPlayerLayer!
     var isMuted = false
 
@@ -39,7 +37,7 @@ class ViewController: UIViewController {
         button.backgroundColor = .white
         button.setTitle("Pause", for: .normal)
         button.setTitleColor(.black, for: .normal)
-        button.addTarget(self, action: #selector(pause), for: .touchUpInside)
+        button.addTarget(self, action: #selector(playOrPause), for: .touchUpInside)
         return button
     }()
 
@@ -61,42 +59,37 @@ class ViewController: UIViewController {
 
         playerLayer = AVPlayerLayer(player: player.player)
         playerLayer.frame = self.view.bounds
+
         self.view.layer.insertSublayer(playerLayer, at: 1)
 
         self.view.addSubview(urlTextField)
         self.view.addSubview(playOrPuaseButton)
         self.view.addSubview(muteButton)
+
+        observation = player.observe(\.timeControlStatus, changeHandler: { (player, _) in
+            self.statusInt = player.timeControlStatus.rawValue
+        })
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
 
-    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey: Any]?, context: UnsafeMutableRawPointer?) {
-        print(keyPath)
-    }
+    @objc func playOrPause(_ sender: UIButton) {
 
-    @objc func pause(_ sender: UIButton) {
-        player.player.pause()
-        sender.setTitle("Pause", for: .normal)
-        player.timeControlStatus = .paused
-        sender.removeTarget(nil, action: nil, for: .allEvents)
-        sender.addTarget(self, action: #selector(play), for: .touchUpInside)
-    }
-
-    @objc func play(_ sender: UIButton) {
-        player.player.play()
-        sender.setTitle("Play", for: .normal)
-        player.timeControlStatus = .playing
-        sender.removeTarget(nil, action: nil, for: .allEvents)
-        sender.addTarget(self, action: #selector(pause), for: .touchUpInside)
+        if statusInt == 0 {
+            player.player.play()
+            player.timeControlStatus = .playing
+        } else if statusInt == 2 {
+            player.player.pause()
+            player.timeControlStatus = .paused
+        }
     }
 
     @objc func mute(_ sender: UIButton) {
         self.isMuted = !isMuted
         player.player.isMuted = isMuted
     }
-
 }
 
 extension ViewController: UITextFieldDelegate {
@@ -105,15 +98,12 @@ extension ViewController: UITextFieldDelegate {
         textField.resignFirstResponder()
         videoURL = URL(string: textField.text!)
         let playerItem = AVPlayerItem(url: videoURL!)
-        let observation = player.observe(\Player.timeControlStatus, changeHandler: { (new, old) in
-            print(new)
-            print(old)
 
-        })
-//        player.addObserver(self, forKeyPath:  , options: [ .new, .old], context: nil)
         player.player.replaceCurrentItem(with: playerItem)
 
         player.player.play()
+
+        statusInt = 2
         return true
     }
 
