@@ -12,34 +12,47 @@ import AVFoundation
 
 class ViewController: UIViewController {
     
-    let videoURL = URL(string: "http://devimages.apple.com/iphone/samples/bipbop/bipbopall.m3u8")
+//    let videoURL = URL(string: "http://devimages.apple.com/iphone/samples/bipbop/bipbopall.m3u8")
+    var videoURL: URL?
+    var player = AVPlayer()
+    var playerLayer: AVPlayerLayer!
     
-    let urlTextField: UITextField = {
-        
-        
-        
-        
-    }
+    var urlTextField: UITextField = {
+        let textField = UITextField()
+        textField.frame = CGRect(x: 10, y: 44, width: UIScreen.main.bounds.width - 20, height: 30)
+        textField.backgroundColor = .white
+        return textField
+    }()
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        let player = AVPlayer(url: videoURL!)
-        let playerLayer = AVPlayerLayer(player: player)
+        view.backgroundColor = .black
+        
+        urlTextField.delegate = self
+        
+        playerLayer = AVPlayerLayer(player: player)
         playerLayer.frame = self.view.bounds
-        self.view.layer.addSublayer(playerLayer)
-        player.play()
-        
-        
-        
-        
-        
+        self.view.layer.insertSublayer(playerLayer, at: 1)
+        self.view.addSubview(urlTextField)
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
     }
 
 
+}
+
+extension ViewController: UITextFieldDelegate {
+    
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        videoURL = URL(string: textField.text!)
+        let playerItem = AVPlayerItem(url: videoURL!)
+        player.replaceCurrentItem(with: playerItem)
+        player.play()
+        return true
+    }
+    
 }
 
