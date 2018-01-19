@@ -19,6 +19,7 @@ class ViewController: UIViewController {
 
     var videoURL: URL?
     var player = Player()
+    var observation: NSKeyValueObservation!
     var playerLayer: AVPlayerLayer!
     var isMuted = false
 
@@ -63,33 +64,30 @@ class ViewController: UIViewController {
         self.view.addSubview(playOrPuaseButton)
         self.view.addSubview(muteButton)
 
-        player.addObserver(self, forKeyPath: #keyPath(Player.timeControlStatus), options: .new, context: nil)
+        observation = player.observe(\.timeControlStatus, changeHandler: { (newStatus, _) in
+            switch newStatus.timeControlStatus {
+            case .paused:
+                self.playOrPuaseButton.removeTarget(nil, action: nil, for: .touchUpInside)
+                self.playOrPuaseButton.addTarget(self, action: #selector(self.play), for: .touchUpInside)
+            case .playing:
+                self.playOrPuaseButton.removeTarget(nil, action: nil, for: .touchUpInside)
+                self.playOrPuaseButton.addTarget(self, action: #selector(self.pause), for: .touchUpInside)
+            default:
+                break
+            }
+
+        })
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
 
-    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
-        if let newStatus = change?[.newKey] as? Int {
-            switch newStatus {
-            case 0:
-                playOrPuaseButton.removeTarget(nil, action: nil, for: .touchUpInside)
-                playOrPuaseButton.addTarget(self, action: #selector(play), for: .touchUpInside)
-            case 2:
-                playOrPuaseButton.removeTarget(nil, action: nil, for: .touchUpInside)
-                playOrPuaseButton.addTarget(self, action: #selector(pause), for: .touchUpInside)
-            default:
-                break
-            }
-        }
-    }
-    
     @objc func play(_ sender: UIButton) {
         player.player.play()
         player.timeControlStatus = .playing
     }
-    
+
     @objc func pause(_ sender: UIButton) {
         player.player.pause()
         player.timeControlStatus = .paused
