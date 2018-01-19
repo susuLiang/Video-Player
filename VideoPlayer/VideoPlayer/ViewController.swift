@@ -23,6 +23,7 @@ class ViewController: UIViewController {
     var observation: NSKeyValueObservation!
     var playerLayer: AVPlayerLayer!
     var isMuted = false
+    var myContext = 0
 
     var urlTextField: UITextField = {
         let textField = UITextField()
@@ -37,7 +38,7 @@ class ViewController: UIViewController {
         button.backgroundColor = .white
         button.setTitle("Pause", for: .normal)
         button.setTitleColor(.black, for: .normal)
-        button.addTarget(self, action: #selector(playOrPause), for: .touchUpInside)
+        button.addTarget(self, action: #selector(pause), for: .touchUpInside)
         return button
     }()
 
@@ -66,24 +67,40 @@ class ViewController: UIViewController {
         self.view.addSubview(playOrPuaseButton)
         self.view.addSubview(muteButton)
 
-        observation = player.observe(\.timeControlStatus, changeHandler: { (player, _) in
-            self.statusInt = player.timeControlStatus.rawValue
-        })
+        player.addObserver(self, forKeyPath: #keyPath(Player.timeControlStatus), options: .new, context: &myContext)
+
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
 
-    @objc func playOrPause(_ sender: UIButton) {
-
-        if statusInt == 0 {
-            player.player.play()
-            player.timeControlStatus = .playing
-        } else if statusInt == 2 {
-            player.player.pause()
-            player.timeControlStatus = .paused
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+        if context == &myContext {
+            if let newStatus = change?[.newKey] as? Int {
+                switch newStatus {
+                case 0:
+                    playOrPuaseButton.removeTarget(nil, action: nil, for: .touchUpInside)
+                    playOrPuaseButton.addTarget(self, action: #selector(play), for: .touchUpInside)
+                case 2:
+                    playOrPuaseButton.removeTarget(nil, action: nil, for: .touchUpInside)
+                    playOrPuaseButton.addTarget(self, action: #selector(pause), for: .touchUpInside)
+                default:
+                    break
+                }
+            }
         }
+        
+    }
+    
+    @objc func play(_ sender: UIButton) {
+        player.player.play()
+        player.timeControlStatus = .playing
+    }
+    
+    @objc func pause(_ sender: UIButton) {
+        player.player.pause()
+        player.timeControlStatus = .paused
     }
 
     @objc func mute(_ sender: UIButton) {
@@ -103,7 +120,6 @@ extension ViewController: UITextFieldDelegate {
 
         player.player.play()
 
-        statusInt = 2
         return true
     }
 
