@@ -22,13 +22,7 @@ class ViewController: UIViewController {
     var observation: NSKeyValueObservation!
     var playerLayer: AVPlayerLayer!
     var isMuted = false
-
-    var urlTextField: UITextField = {
-        let textField = UITextField()
-        textField.frame = CGRect(x: 10, y: 44, width: UIScreen.main.bounds.width - 20, height: 30)
-        textField.backgroundColor = .white
-        return textField
-    }()
+    var searchUrl: UISearchController!
 
     var playOrPuaseButton: UIButton = {
         let button = UIButton()
@@ -54,13 +48,14 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = .black
 
-        urlTextField.delegate = self
-
         playerLayer = AVPlayerLayer(player: player.player)
         playerLayer.frame = self.view.bounds
         self.view.layer.insertSublayer(playerLayer, at: 1)
 
-        self.view.addSubview(urlTextField)
+        searchUrl = UISearchController(searchResultsController: nil)
+        searchUrl.searchBar.delegate = self
+        self.view.addSubview(searchUrl.searchBar)
+
         self.view.addSubview(playOrPuaseButton)
         self.view.addSubview(muteButton)
 
@@ -75,7 +70,6 @@ class ViewController: UIViewController {
             default:
                 break
             }
-
         })
     }
 
@@ -99,18 +93,13 @@ class ViewController: UIViewController {
     }
 }
 
-extension ViewController: UITextFieldDelegate {
-
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        textField.resignFirstResponder()
-        videoURL = URL(string: textField.text!)
+extension ViewController: UISearchBarDelegate {
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.placeholder = searchBar.text
+        videoURL = URL(string: searchBar.text!)
         let playerItem = AVPlayerItem(url: videoURL!)
-
         player.player.replaceCurrentItem(with: playerItem)
-
         player.player.play()
-
-        return true
+        self.searchUrl.isActive = false
     }
-
 }
