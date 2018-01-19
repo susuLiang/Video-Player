@@ -19,11 +19,8 @@ class ViewController: UIViewController {
 
     var videoURL: URL?
     var player = Player()
-    var statusInt: Int?
-    var observation: NSKeyValueObservation!
     var playerLayer: AVPlayerLayer!
     var isMuted = false
-    var myContext = 0
 
     var urlTextField: UITextField = {
         let textField = UITextField()
@@ -60,15 +57,13 @@ class ViewController: UIViewController {
 
         playerLayer = AVPlayerLayer(player: player.player)
         playerLayer.frame = self.view.bounds
-
         self.view.layer.insertSublayer(playerLayer, at: 1)
 
         self.view.addSubview(urlTextField)
         self.view.addSubview(playOrPuaseButton)
         self.view.addSubview(muteButton)
 
-        player.addObserver(self, forKeyPath: #keyPath(Player.timeControlStatus), options: .new, context: &myContext)
-
+        player.addObserver(self, forKeyPath: #keyPath(Player.timeControlStatus), options: .new, context: nil)
     }
 
     override func didReceiveMemoryWarning() {
@@ -76,21 +71,18 @@ class ViewController: UIViewController {
     }
 
     override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
-        if context == &myContext {
-            if let newStatus = change?[.newKey] as? Int {
-                switch newStatus {
-                case 0:
-                    playOrPuaseButton.removeTarget(nil, action: nil, for: .touchUpInside)
-                    playOrPuaseButton.addTarget(self, action: #selector(play), for: .touchUpInside)
-                case 2:
-                    playOrPuaseButton.removeTarget(nil, action: nil, for: .touchUpInside)
-                    playOrPuaseButton.addTarget(self, action: #selector(pause), for: .touchUpInside)
-                default:
-                    break
-                }
+        if let newStatus = change?[.newKey] as? Int {
+            switch newStatus {
+            case 0:
+                playOrPuaseButton.removeTarget(nil, action: nil, for: .touchUpInside)
+                playOrPuaseButton.addTarget(self, action: #selector(play), for: .touchUpInside)
+            case 2:
+                playOrPuaseButton.removeTarget(nil, action: nil, for: .touchUpInside)
+                playOrPuaseButton.addTarget(self, action: #selector(pause), for: .touchUpInside)
+            default:
+                break
             }
         }
-        
     }
     
     @objc func play(_ sender: UIButton) {
